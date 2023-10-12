@@ -277,7 +277,8 @@ struct point {
 };
 
 LL solve (vector <point> &a, int l, int r) {
-    if(l + 1 >= r) return INF; //剪枝
+    if(l == r) return INF;
+    if(l + 1 == r) return a[l].distance_2(a[r]); //剪枝
 
     int m = (r + l)/2; //中间的数
     LL ret = min(solve(a,l,m),solve(a,m,r)); //递归的最小值，也就是两个集合内部的最小值
@@ -395,7 +396,8 @@ int main() {
 */
 
 
-/*
+
+
 //10.6 T1299 O(nlogn)写法
 
 typedef long long LL;
@@ -407,60 +409,58 @@ LL pow_2 (LL x) {
 
 struct point {
     LL x, y;
-    point(LL _x = 0, LL _y = 0) : x(_x), y(_y) {} //初始化
-    LL distance_2 (const point & other) const {
+    point() {}
+    point (LL _x, LL _y) : x(_x), y(_y) {} //初始化
+    long long distance_2 (const point & other) const {
         return pow_2(x - other.x) + pow_2(y - other.y); //计算距离的函数
     }
 };
 
-LL solve (vector <point> &a, vector <point> &b, int l, int r) {
-    if(l == r) return INF; //中间没有点
-    // if(l + 1 == r) //只有两个点
-    // {
-    //     if(b[l].y > b[r].y) swap(b[l],b[r]); //保证b以y为大小排序
-    //     return a[l].distance_2(a[r]); //返回两点之间距离
-    // }
+vector<point> a;
+
+LL solve (int l, int r) {
+    if(l == r) return INF;
+    else if(l + 1 == r) return a[l].distance_2(a[r]); //剪枝
 
     int m = (r + l)/2; //中间的数
-    LL ret = min(solve(a,b,l,m),solve(a,b,m + 1,r)); //递归的最小值，也就是两个集合内部的最小值
-    
-    int i,j,k; //左右边的下标,Q中的下标
-    vector<point> tmp(r - l + 1); //临时数组
-    for(i = l,j = m + 1;(i <= m) && (j <= r);) //归并排序
-    { 
-        if(b[i].y < b[j].y)
-        {
-            tmp[k++] = b[i];
-            if(pow_2(a[i].x - a[m].x) < ret) //满足条件，开始寻找
-            {
-                for(int w = j - 1; w > m && j - w < 3; w--) ret = min(ret, b[i].distance_2(b[w]));
-                for(int w = j; w <= r && w - j < 3; w++) ret = min(ret, b[i].distance_2(b[w]));
-            }
-            i++;
-        }
-        else tmp[k++] = b[j++];
-    }
+    LL pivot = a[m].x; //记录这个中位数，后面可能会变
+    LL ret = min(solve(l,m),solve(m,r)); //递归的最小值，也就是两个集合内部的最小值
 
-    while(i <= m)
+    //在这里按照y来merge
+    vector<point> tmp(r - l + 1); //用来储存两个集合中距离<ret的点
+    int k = 0,i = l,j = m; //起始点
+    while(i <= m - 1 && j <= r)
     {
-        tmp[k++] = b[i];
-        if(pow_2(a[i].x - a[m].x) < ret) //满足条件，开始寻找
-        {
-            for(int w = j - 1; w > m && j - w < 3; w--) ret = min(ret, b[i].distance_2(b[w]));
-            for(int w = j; w <= r && w - j < 3; w++) ret = min(ret, b[i].distance_2(b[w]));
-        }
-        i++;
+        tmp[k++] = (a[i].y < a[j].y) ? a[i++] : a[j++]; //归并过程
     }
-    while(j <= r) tmp[k++] = b[j++];
+    while(i <= m - 1) tmp[k++] = a[i++];
+    while(j <= r) tmp[k++] = a[j++];
 
-    for(i = l;i <= r;i++) b[i] = tmp[i - l]; //复制
+    for(i = 0;i <= r - l;i++) a[i + l] = tmp[i];
+    //merge完成
+
+    k = 0; //重新编排序号
+    for(int i = l;i <= r;i++)
+    {
+        if(pow_2(a[i].x - pivot) < ret) tmp[k++] = a[i];
+    }
+
+    for(int i = 0;i < k;i++)
+    {
+        for(int j = i + 1;j < k;j++)
+        {
+            if(pow_2(tmp[j].y - tmp[i].y) >= ret) break; //后面的也一定会小
+
+            ret = min(ret,tmp[i].distance_2(tmp[j])); //更新ret
+        }
+    }
+    
     return ret;
 }
 
 int main() {
     int n;
     cin >> n;
-    vector <point> a;
     for (int i = 0; i < n; i++) {
         LL x, y;
         cin >> x >> y;
@@ -469,7 +469,6 @@ int main() {
     sort(a.begin(), a.end(), [](auto &u, auto &v) { //以x为先排序
         return u.x < v.x;
     });
-    vector <point> b = a;
-    cout << solve (a, b, 0, n - 1) << endl; //wok，这里要改成n - 1，真离谱，我根本没看主函数，只改了一个数据类型
+    cout << solve (0, n - 1) << endl; //wok，这里要改成n - 1，真离谱，我根本没看主函数，只改了一个数据类型
 }
-*/
+
