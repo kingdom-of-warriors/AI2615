@@ -952,8 +952,10 @@ int main()
 
 
 
+/*
 //11.27 T1428 MST
-
+#include <bits/stdc++.h>
+using namespace std;
 typedef long long LL;
 struct edge
 {
@@ -971,10 +973,10 @@ LL prim(int s)
 {
     //初始化，s以及s的邻边进行赋初值
     LL res = 0; //当前的树的长度
-    dis[s] = 0; visited[s] = 1;
+    visited[s] = 1;
     for(auto next : adj[s])
     {
-        dis[next.v] = next.dis;
+        dis[next.v] = min(next.dis, dis[next.v]);
     }
 
     for(int j = 1;j < n;j++) //每一轮找到一条边
@@ -1013,4 +1015,201 @@ int main()
 
     cout << prim(1);
 }
+*/
 
+
+/*
+//11.29 T1429
+
+//贪心解法
+//打工的结构体
+struct work{
+    int s, t, money; //持续时间
+    work() {}
+    work(int a, int b, int c):s(a), t(b), money(c) {}
+};
+
+bool cmp(work& x, work& y) //按结束时间从小到大，且开始时间尽可能晚
+{
+    if(x.t == y.t) return x.s > y.s;
+    return x.t < y.t; 
+}
+
+int main()
+{
+    int n, m, x; //放假天数、打工数量、旅游的开销
+    cin >> n >> m >> x;
+    vector<int> isWorked(n + 1); //是否已经工作过
+    vector<work> works(m); //存所有的工作
+
+    for(int i = 0;i < m;i++)
+    {
+        int s, t, a; //开始、结束、钱
+        cin >> s >> t >> a;
+        works[i] = work(s, t, a);
+    }
+
+    sort(works.begin(), works.end(), cmp); //按照持续时间排序
+    int res = 0; //打工个数
+    int finish = 0; //当前的结束天数
+    for(auto w : works)
+    {
+        if(w.s <= finish) continue; //这个打不成
+        else
+        {
+            res++;
+            finish = w.t; //更新结束天数
+        }
+    }
+
+    cout << res;
+}
+*/
+
+/*
+//dp解法
+//打工的结构体
+#include <bits/stdc++.h>
+using namespace std;
+struct work{
+    int s, t, money; //持续时间
+    work() {}
+    work(int a, int b, int c):s(a), t(b), money(c) {}
+};
+
+int main()
+{
+    int n, m, x; //放假天数、打工数量、旅游的开销
+    cin >> n >> m >> x;
+    vector<work> works(m); //存所有的工作
+    vector<int> dp(n + 1); //dp[i]表示第i天后最多多少钱
+
+    for(int i = 0;i < m;i++)
+    {
+        int s, t, a; //开始、结束、钱
+        cin >> s >> t >> a;
+        works[i] = work(s, t, a);
+    }
+
+    for(int i = 1;i <= n;i++)
+    {
+        dp[i] = dp[i - 1]; //不减
+        for(auto w : works) //找到结束时间=i的工作
+        {
+            if(w.t == i)
+            {
+                dp[i] = max(dp[i], dp[w.s - 1] + 1); //dp[i]:不做，dp[s - 1]+1:做
+            }
+        }
+    }
+
+    cout << dp[n];
+}
+*/
+
+
+/*
+//11.29 T1430
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long LL;
+
+//打工的结构体
+struct work{
+    int s, t, money;
+    work() {}
+    work(int a, int b, int c):s(a), t(b), money(c) {}
+};
+
+int main()
+{
+    int n, m, x; //放假天数、打工数量、旅游的开销
+    cin >> n >> m >> x;
+    vector<work> works(m); //存所有的工作
+    vector<LL> dp(n + 1); //dp[i]表示第i天后最多多少钱
+
+    for(int i = 0;i < m;i++)
+    {
+        int s, t, a; //开始、结束、钱
+        cin >> s >> t >> a;
+        works[i] = work(s, t, a);
+    }
+
+    for(int i = 1;i <= n;i++)
+    {
+        if(dp[i - 1] >= x) //有钱去玩，那就去玩
+        {
+            dp[i] = dp[i - 1] - x;
+        }
+        else
+        {
+            dp[i] = dp[i - 1]; //赋初值
+            for(auto w : works)
+            {
+                if(w.t == i) //第i天结束
+                {
+                    dp[i] = max(dp[i], dp[w.s - 1] + w.money); //多挣钱，为去玩做准备
+                }
+            }
+        }
+    }
+
+    cout << dp[n];
+}
+*/
+
+
+// 12.2 T1856
+#include <bits/stdc++.h>
+using namespace std;
+const int N = 20;
+int n; //点数
+int res = INT_MAX;
+int adj[20][20]; //邻接矩阵存边
+bool visited[20]; //是否访问过
+
+void dfs(int num, int pre, int val)
+{
+    if(num >= n)
+    {
+        res = min(res, val + adj[pre][0]);
+    }
+
+    if(val >= res) return; //剪枝
+    for(int i = 1;i < n;i++)
+    {
+        if(!visited[i])
+        {
+            visited[i] = true; //已经访问过
+            dfs(num + 1, i, val + adj[pre][i]);
+            visited[i] = false; //回溯
+        }
+    }
+}
+
+int main()
+{
+    cin >> n;
+    for(int i = 0;i < n;i++)
+    {
+        visited[i] = false;
+        for(int j = 0;j < n;j++)
+        {
+            cin >> adj[i][j];
+        }
+    }
+
+    //floyd算法
+    for(int k = 0;k < n;k++)
+    {
+        for(int i = 0;i < n;i++)
+        {
+            for(int j = 0;j < n;j++)
+            {
+                adj[i][j] = min(adj[i][j], adj[i][k] + adj[k][j]); //最短路算法
+            }
+        }
+    }
+    dfs(1, 0, 0);
+    cout << res;
+}
